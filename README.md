@@ -7,10 +7,10 @@ Frontend (UI)
       ↓
 API Gateway (FastAPI)
       ↓
- ┌─────────────────────────────┐
+ 
  │            Eureka            │
  │     Service Discovery        │
- └─────────────────────────────┘
+ 
       ↓            ↓             ↓
 Product Service  Inventory Service  Order Service
  (MongoDB)          (MySQL)           (MySQL)
