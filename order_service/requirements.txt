@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+pydantic
+SQLAlchemy
+pymysql
+httpx
+python-dotenv
+cryptography
+py_eureka_client

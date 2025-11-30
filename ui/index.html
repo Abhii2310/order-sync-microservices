@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>OrderSync • Microservices Order Management</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .glass {
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(18px);
+      border: 1px solid rgba(148, 163, 184, 0.35);
+    }
+    html { scroll-behavior: smooth; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-50">
+  <div class="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+    <!-- Navbar -->
+    <header class="border-b border-slate-800/80 sticky top-0 z-30 bg-slate-950/70 backdrop-blur">
+      <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="h-9 w-9 rounded-2xl bg-gradient-to-br from-emerald-400 via-cyan-400 to-violet-500 flex items-center justify-center text-slate-950 font-bold text-lg">
+            OS
+          </div>
+          <div>
+            <p class="text-sm font-semibold tracking-tight">OrderSync</p>
+            <p class="text-[11px] text-slate-400">FastAPI • Python Microservices</p>
+          </div>
+        </div>
+        <nav class="hidden sm:flex gap-4 text-xs text-slate-300">
+          <a href="#products" class="hover:text-emerald-400">Products</a>
+          <a href="#inventory" class="hover:text-emerald-400">Inventory</a>
+          <a href="#orders" class="hover:text-emerald-400">Orders</a>
+          <a href="#activity" class="hover:text-emerald-400">Activity</a>
+        </nav>
+        <span class="rounded-full border border-emerald-400/60 text-[11px] px-3 py-1 text-emerald-300 bg-emerald-500/10">
+          Gateway: http://localhost:9000
+        </span>
+      </div>
+    </header>
+
+    <!-- Hero -->
+    <section class="max-w-6xl mx-auto px-4 pt-8 pb-4">
+      <div class="grid md:grid-cols-[1.4fr,1fr] gap-8 items-center">
+        <div>
+          <h1 class="text-3xl sm:text-4xl md:text-5xl font-semibold tracking-tight">
+            Microservices
+            <span class="bg-gradient-to-r from-emerald-400 via-cyan-400 to-violet-400 bg-clip-text text-transparent">
+              Order Management
+            </span>
+          </h1>
+          <p class="mt-3 text-sm sm:text-base text-slate-300 max-w-xl">
+            Live demo of a microservices-based Order Management System built with Python FastAPI.
+            This UI talks to the API Gateway only, which routes to Product, Inventory, and Order services.
+          </p>
+          <div class="mt-5 flex flex-wrap gap-3 text-xs text-slate-300">
+            <span class="px-3 py-1 rounded-full bg-slate-900/80 border border-slate-700/70">FastAPI • Python 3.9</span>
+            <span class="px-3 py-1 rounded-full bg-slate-900/80 border border-slate-700/70">MongoDB (Products)</span>
+            <span class="px-3 py-1 rounded-full bg-slate-900/80 border border-slate-700/70">MySQL (Inventory & Orders)</span>
+            <span class="px-3 py-1 rounded-full bg-slate-900/80 border border-slate-700/70">Eureka Discovery • API Gateway</span>
+          </div>
+        </div>
+
+        <!-- Live status -->
+        <div class="glass rounded-3xl p-4 shadow-2xl">
+          <p class="text-[11px] text-slate-400 mb-2 uppercase tracking-[0.2em]">Microservices</p>
+          <div class="space-y-2 text-xs">
+            <div class="flex items-center justify-between rounded-2xl bg-slate-900/80 px-3 py-2 border border-slate-700">
+              <div>
+                <p class="font-semibold text-sm">API Gateway</p>
+                <p class="text-[11px] text-slate-400">Single entry point • /api/*</p>
+              </div>
+              <span class="inline-flex items-center gap-1 text-[10px] px-2 py-1 rounded-full bg-emerald-500/15 text-emerald-300">
+                <span class="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                ONLINE
+              </span>
+            </div>
+            <div class="flex items-center justify-between rounded-2xl bg-slate-900/60 px-3 py-2 border border-slate-800">
+              <div>
+                <p class="font-semibold text-[13px]">Product Service</p>
+                <p class="text-[11px] text-slate-400">MongoDB • /api/products</p>
+              </div>
+            </div>
+            <div class="flex items-center justify-between rounded-2xl bg-slate-900/60 px-3 py-2 border border-slate-800">
+              <div>
+                <p class="font-semibold text-[13px]">Inventory Service</p>
+                <p class="text-[11px] text-slate-400">MySQL • /api/inventory</p>
+              </div>
+            </div>
+            <div class="flex items-center justify-between rounded-2xl bg-slate-900/60 px-3 py-2 border border-slate-800">
+              <div>
+                <p class="font-semibold text-[13px]">Order Service</p>
+                <p class="text-[11px] text-slate-400">MySQL • /api/orders</p>
+              </div>
+            </div>
+          </div>
+          <p id="statusLabel" class="mt-3 text-[11px] text-slate-400">
+            Status: <span class="text-emerald-300">Ready • connected to localhost:9000</span>
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Toast -->
+    <main class="max-w-6xl mx-auto px-4 pb-10 space-y-6">
+      <div id="toast" class="hidden rounded-xl border bg-slate-900/95 text-xs px-4 py-2 flex items-center justify-between gap-4">
+        <span id="toastText"></span>
+        <button onclick="hideToast()" class="text-slate-400 hover:text-slate-200 text-[11px]">×</button>
+      </div>
+
+      <!-- Main panels -->
+      <div class="grid xl:grid-cols-[1.15fr,1.15fr,1.1fr] gap-4">
+        <!-- Create Product -->
+        <section id="products" class="glass rounded-3xl p-4">
+          <div class="flex items-center justify-between mb-2">
+            <h2 class="text-sm font-semibold flex items-center gap-2">
+              <span class="text-emerald-300 text-lg">📦</span> Create Product
+            </h2>
+            <span class="text-[11px] text-slate-400">Service: /api/products</span>
+          </div>
+          <p class="text-[11px] text-slate-400 mb-3">
+            Creates a product document in the Product Service (MongoDB) via the gateway.
+          </p>
+          <form id="productForm" class="space-y-2 text-xs">
+            <div>
+              <label class="block mb-1 text-slate-300">Name</label>
+              <input id="productName" class="w-full rounded-lg bg-slate-900/80 border border-slate-700 px-2 py-1.5 text-xs focus:outline-none focus:border-emerald-400" required />
+            </div>
+            <div>
+              <label class="block mb-1 text-slate-300">Description</label>
+              <input id="productDescription" class="w-full rounded-lg bg-slate-900/80 border border-slate-700 px-2 py-1.5 text-xs focus:outline-none focus:border-emerald-400" />
+            </div>
+            <div>
+              <label class="block mb-1 text-slate-300">Price</label>
+              <input id="productPrice" type="number" min="0" step="0.01" class="w-full rounded-lg bg-slate-900/80 border border-slate-700 px-2 py-1.5 text-xs focus:outline-none focus:border-emerald-400" required />
+            </div>
+            <button id="productBtn" type="submit" class="mt-1 w-full rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 text-slate-950 text-xs font-semibold py-2 hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed">
+              + Create Product
+            </button>
+          </form>
+          <p id="lastProductId" class="mt-2 text-[11px] text-slate-400 break-all"></p>
+        </section>
+
+        <!-- Inventory -->
+        <section id="inventory" class="glass rounded-3xl p-4">
+          <div class="flex items-center justify-between mb-2">
+            <h2 class="text-sm font-semibold flex items-center gap-2">
+              <span class="text-cyan-300 text-lg">📊</span> Update Inventory
+            </h2>
+            <span class="text-[11px] text-slate-400">Service: /api/inventory</span>
+          </div>
+          <p class="text-[11px] text-slate-400 mb-3">
+            Links a product ID to available quantity in the Inventory Service (MySQL).
+          </p>
+          <form id="inventoryForm" class="space-y-2 text-xs">
+            <div>
+              <label class="block mb-1 text-slate-300">Product ID</label>
+              <input id="inventoryProductId" class="w-full rounded-lg bg-slate-900/80 border border-slate-700 px-2 py-1.5 text-xs focus:outline-none focus:border-cyan-400" required />
+            </div>
+            <div>
+              <label class="block mb-1 text-slate-300">Quantity</label>
+              <input id="inventoryQuantity" type="number" min="0" class="w-full rounded-lg bg-slate-900/80 border border-slate-700 px-2 py-1.5 text-xs focus:outline-none focus:border-cyan-400" required />
+            </div>
+            <button id="inventoryBtn" type="submit" class="mt-1 w-full rounded-xl bg-gradient-to-r from-cyan-500 to-sky-500 text-slate-950 text-xs font-semibold py-2 hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed">
+              💾 Save Inventory
+            </button>
+          </form>
+          <p class="mt-2 text-[11px] text-slate-400">
+            Tip: after creating a product, the ID is auto-filled here.
+          </p>
+        </section>
+
+        <!-- Orders -->
+        <section id="orders" class="glass rounded-3xl p-4">
+          <div class="flex items-center justify-between mb-2">
+            <h2 class="text-sm font-semibold flex items-center gap-2">
+              <span class="text-violet-300 text-lg">🧾</span> Place Order
+            </h2>
+            <span class="text-[11px] text-slate-400">Service: /api/orders</span>
+          </div>
+          <p class="text-[11px] text-slate-400 mb-3">
+            Creates an order after checking stock with the Inventory Service.
+          </p>
+          <form id="orderForm" class="space-y-2 text-xs">
+            <div>
+              <label class="block mb-1 text-slate-300">Product ID</label>
+              <input id="orderProductId" class="w-full rounded-lg bg-slate-900/80 border border-slate-700 px-2 py-1.5 text-xs focus:outline-none focus:border-violet-400" required />
+            </div>
+            <div>
+              <label class="block mb-1 text-slate-300">Quantity</label>
+              <input id="orderQuantity" type="number" min="1" class="w-full rounded-lg bg-slate-900/80 border border-slate-700 px-2 py-1.5 text-xs focus:outline-none focus:border-violet-400" required />
+            </div>
+            <button id="orderBtn" type="submit" class="mt-1 w-full rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-500 text-slate-950 text-xs font-semibold py-2 hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed">
+              ✅ Place Order
+            </button>
+          </form>
+          <p id="lastOrderStatus" class="mt-2 text-[11px] text-slate-400"></p>
+        </section>
+      </div>
+
+      <!-- Products + Activity -->
+      <section class="grid lg:grid-cols-[1.6fr,1.1fr] gap-4 mt-3">
+        <!-- Products table -->
+        <div class="glass rounded-3xl p-4">
+          <div class="flex items-center justify-between mb-2">
+            <h2 class="text-sm font-semibold flex items-center gap-2">
+              <span class="text-amber-300 text-lg">📃</span> Product Catalog (via GET /api/products)
+            </h2>
+            <div class="flex items-center gap-3 text-[11px] text-slate-400">
+              <span id="productCountBadge" class="px-2 py-1 rounded-full border border-slate-600 bg-slate-900/80">
+                0 products
+              </span>
+              <button onclick="loadProducts()" class="px-3 py-1 rounded-full border border-slate-600 hover:border-emerald-400 hover:text-emerald-300">
+                ⟳ Refresh
+              </button>
+            </div>
+          </div>
+          <div class="overflow-x-auto text-xs">
+            <table class="min-w-full border border-slate-800 rounded-xl overflow-hidden">
+              <thead class="bg-slate-900/80 text-slate-300">
+                <tr>
+                  <th class="text-left px-3 py-2 border-b border-slate-800">Name</th>
+                  <th class="text-left px-3 py-2 border-b border-slate-800 hidden sm:table-cell">Description</th>
+                  <th class="text-left px-3 py-2 border-b border-slate-800">Price</th>
+                  <th class="text-left px-3 py-2 border-b border-slate-800">ID</th>
+                </tr>
+              </thead>
+              <tbody id="productsTable" class="divide-y divide-slate-800/80">
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Activity + Orders summary -->
+        <div id="activity" class="space-y-3">
+          <div class="glass rounded-3xl p-4">
+            <div class="flex items-center justify-between mb-2">
+              <h2 class="text-sm font-semibold flex items-center gap-2">
+                <span class="text-sky-300 text-lg">📡</span> Recent Activity
+              </h2>
+              <button onclick="clearActivity()" class="text-[11px] text-slate-400 hover:text-slate-200">
+                Clear
+              </button>
+            </div>
+            <div id="activityList" class="space-y-1.5 text-[11px] max-h-40 overflow-y-auto pr-1">
+              <!-- Activity lines -->
+            </div>
+          </div>
+
+          <div class="glass rounded-3xl p-4">
+            <div class="flex items-center justify-between mb-2">
+              <h2 class="text-sm font-semibold flex items-center gap-2">
+                <span class="text-lime-300 text-lg">📦</span> Order Summary
+              </h2>
+            </div>
+            <div id="ordersSummary" class="text-[11px] text-slate-300 space-y-1">
+              <p>No orders placed yet.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="border-t border-slate-800/80">
+      <div class="max-w-6xl mx-auto px-4 py-3 text-[11px] text-slate-500 flex flex-col sm:flex-row gap-1 sm:gap-3 justify-between">
+        <span>OrderSync • FastAPI Microservices Demo</span>
+        <span>Product • Inventory • Order • Gateway • Eureka</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    const BASE_URL = "http://localhost:9000";
+    const activityLog = [];
+    const recentOrders = [];
+
+    function showToast(message, type = "info") {
+      const toast = document.getElementById("toast");
+      const text = document.getElementById("toastText");
+      text.textContent = message;
+      toast.classList.remove("hidden");
+      toast.classList.remove("border-emerald-500", "border-rose-500", "border-slate-700");
+      if (type === "error") {
+        toast.classList.add("border-rose-500");
+        text.className = "text-rose-300";
+      } else {
+        toast.classList.add("border-emerald-500");
+        text.className = "text-emerald-300";
+      }
+      setTimeout(() => {
+        toast.classList.add("hidden");
+      }, 4000);
+    }
+
+    function hideToast() {
+      document.getElementById("toast").classList.add("hidden");
+    }
+
+    function addActivity(message, type = "info") {
+      const timestamp = new Date().toLocaleTimeString();
+      activityLog.unshift({ message, type, timestamp });
+      if (activityLog.length > 8) activityLog.pop();
+      renderActivity();
+    }
+
+    function renderActivity() {
+      const list = document.getElementById("activityList");
+      list.innerHTML = "";
+      if (!activityLog.length) {
+        list.innerHTML = '<p class="text-slate-500">No activity yet. Perform an action using the forms.</p>';
+        return;
+      }
+      for (const item of activityLog) {
+        const color = item.type === "error" ? "text-rose-300" : "text-emerald-300";
+        const icon = item.type === "error" ? "⚠" : "✓";
+        const div = document.createElement("div");
+        div.className = "flex items-start gap-2";
+        div.innerHTML = `
+          <span class="${color} mt-[1px] text-[10px]">${icon}</span>
+          <div>
+            <span class="text-slate-300">${item.message}</span>
+            <span class="text-slate-500 ml-1">• ${item.timestamp}</span>
+          </div>
+        `;
+        list.appendChild(div);
+      }
+    }
+
+    function clearActivity() {
+      activityLog.length = 0;
+      renderActivity();
+    }
+
+    function renderOrdersSummary() {
+      const container = document.getElementById("ordersSummary");
+      container.innerHTML = "";
+      if (!recentOrders.length) {
+        container.innerHTML = "<p>No orders placed yet.</p>";
+        return;
+      }
+      const last = recentOrders[0];
+      const total = recentOrders.length;
+      container.innerHTML = `
+        <p>Last order ID: <span class="text-emerald-300">${last.id}</span></p>
+        <p>Status: <span class="text-emerald-300">${last.status}</span></p>
+        <p>Product ID: <span class="text-slate-300">${last.product_id}</span>, Quantity: <span class="text-slate-300">${last.quantity}</span></p>
+        <p class="text-slate-400 mt-1">Total orders this session: ${total}</p>
+      `;
+    }
+
+    async function loadProducts() {
+      try {
+        const res = await fetch(`${BASE_URL}/api/products`);
+        if (!res.ok) throw new Error("Failed to load products");
+        const data = await res.json();
+        const tbody = document.getElementById("productsTable");
+        const countBadge = document.getElementById("productCountBadge");
+        tbody.innerHTML = "";
+        countBadge.textContent = `${data.length} product${data.length !== 1 ? "s" : ""}`;
+
+        if (!data.length) {
+          tbody.innerHTML = `<tr><td colspan="4" class="px-3 py-3 text-center text-slate-400 text-xs">No products yet. Create one using the form above.</td></tr>`;
+          return;
+        }
+        for (const p of data) {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td class="px-3 py-2">${p.name}</td>
+            <td class="px-3 py-2 hidden sm:table-cell">${p.description || ""}</td>
+            <td class="px-3 py-2">₹${p.price}</td>
+            <td class="px-3 py-2 text-[10px] break-all">${p.id}</td>
+          `;
+          tbody.appendChild(tr);
+        }
+      } catch (err) {
+        console.error(err);
+        showToast("Error loading products", "error");
+        addActivity("Failed to load products", "error");
+      }
+    }
+
+    // Product form handler
+    document.getElementById("productForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById("productBtn");
+      btn.disabled = true;
+      btn.textContent = "Creating...";
+
+      const name = document.getElementById("productName").value.trim();
+      const description = document.getElementById("productDescription").value.trim();
+      const price = parseFloat(document.getElementById("productPrice").value);
+
+      try {
+        const res = await fetch(`${BASE_URL}/api/products`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, description, price })
+        });
+        if (!res.ok) throw new Error("Failed to create product");
+        const data = await res.json();
+        document.getElementById("lastProductId").textContent =
+          `Last created product ID: ${data.id}`;
+        document.getElementById("inventoryProductId").value = data.id;
+        document.getElementById("orderProductId").value = data.id;
+        showToast("Product created successfully ✨", "info");
+        addActivity(`Created product "${data.name}"`, "info");
+        e.target.reset();
+        loadProducts();
+      } catch (err) {
+        console.error(err);
+        showToast("Error creating product", "error");
+        addActivity("Failed to create product", "error");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "+ Create Product";
+      }
+    });
+
+    // Inventory form handler
+    document.getElementById("inventoryForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById("inventoryBtn");
+      btn.disabled = true;
+      btn.textContent = "Saving...";
+
+      const product_id = document.getElementById("inventoryProductId").value.trim();
+      const quantity = parseInt(document.getElementById("inventoryQuantity").value, 10);
+
+      try {
+        const res = await fetch(`${BASE_URL}/api/inventory`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ product_id, quantity })
+        });
+        if (!res.ok) throw new Error("Failed to update inventory");
+        showToast("Inventory updated ✅", "info");
+        addActivity(`Updated inventory for product ${product_id} → qty ${quantity}`, "info");
+        e.target.reset();
+      } catch (err) {
+        console.error(err);
+        showToast("Error updating inventory", "error");
+        addActivity("Failed to update inventory", "error");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "💾 Save Inventory";
+      }
+    });
+
+    // Order form handler
+    document.getElementById("orderForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById("orderBtn");
+      btn.disabled = true;
+      btn.textContent = "Placing...";
+
+      const product_id = document.getElementById("orderProductId").value.trim();
+      const quantity = parseInt(document.getElementById("orderQuantity").value, 10);
+
+      try {
+        const res = await fetch(`${BASE_URL}/api/orders`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ product_id, quantity })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          const msg = data.detail || "Order failed";
+          document.getElementById("lastOrderStatus").textContent = `Order error: ${msg}`;
+          showToast(msg, "error");
+          addActivity(`Order failed for product ${product_id}`, "error");
+          return;
+        }
+        document.getElementById("lastOrderStatus").textContent =
+          `Order #${data.id} created • status: ${data.status}`;
+        recentOrders.unshift({
+          id: data.id,
+          status: data.status,
+          product_id,
+          quantity
+        });
+        if (recentOrders.length > 5) recentOrders.pop();
+        renderOrdersSummary();
+        showToast("Order created successfully 🧾", "info");
+        addActivity(`Order #${data.id} created for product ${product_id}`, "info");
+        e.target.reset();
+      } catch (err) {
+        console.error(err);
+        showToast("Error creating order", "error");
+        addActivity("Failed to create order", "error");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "✅ Place Order";
+      }
+    });
+
+    // Initial load
+    renderActivity();
+    renderOrdersSummary();
+    loadProducts();
+  </script>
+</body>
+</html>
