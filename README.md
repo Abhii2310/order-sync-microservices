@@ -1,41 +1,19 @@
 OrderSync – Microservices Order Management System
 
-OrderSync is a distributed microservices-based Order Management System built using FastAPI, MongoDB, MySQL, Eureka Discovery & API Gateway architecture.
-It enables users to create products, update inventory, place orders, and track activities through a responsive web UI.
+OrderSync is a full microservices-based Order Management System developed using modern distributed architecture.
+The system allows a business to manage products, update inventory, and process orders — exactly like real e-commerce platforms such as Amazon / Flipkart.
 
-Frontend (UI)
-      ↓
-API Gateway (FastAPI)
-      ↓
- 
- │            Eureka            │
- │     Service Discovery        │
- 
-      ↓            ↓             ↓
-Product Service  Inventory Service  Order Service
- (MongoDB)          (MySQL)           (MySQL)
+This project demonstrates API Gateway + Microservices + Service Discovery with a responsive Web UI.
 
->How Eureka Helps
+<>Why Eureka is Used (Simple Explanation)
 
-Without Eureka:
-Gateway uses hard-coded URLs → Not scalable
+Without Eureka ❌
+Every microservice URL must be hard-coded in the gateway (example: localhost:8001).
+If any service restarts or changes its port → system fails.
 
-With Eureka:
-Each microservice registers dynamically
-Gateway auto-discovers service locations
-Enables load balancing & auto healing
+With Eureka ✔
+Each service automatically registers itself in Eureka with its IP & port
+API Gateway asks Eureka where a service is running
+Even if a service restarts / scales / moves to another machine → system continues smoothly
 
-If a service restarts or scales up, Eureka automatically updates its location.
-
-Folder Structure
-order-sync-microservices
-│
-├── gateway/                # API Gateway (FastAPI)
-├── product_service/        # MongoDB Product Microservice
-├── inventory_service/      # MySQL Inventory Microservice
-├── order_service/          # MySQL Order Microservice
-├── eureka-server/          # Spring Boot Eureka Server
-├── ui/                     # Web UI Dashboard
-├── docker-compose.yml      # (optional for future deployment)
-├── README.md               # Project documentation
-└── .gitignore
+➡️ This makes the project scalable, fault-tolerant and production-ready.
